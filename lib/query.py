@@ -170,7 +170,7 @@ async def query_multi(
         results.extend(data['data'])
 
         total = data['pagination']['total']
-        if total >= len(results):
+        if len(results) >= total:
             break
 
         params['skip'] = len(results)
