@@ -11,11 +11,12 @@ from .version import __version__
 
 TIME_OFFSET = 120  # seconds for token to expire before actual expiration
 IS_URL = re.compile(r'^https?\:\/\/', re.IGNORECASE)
-USER_AGENT = f'InfraSonarVeeamProbe/{__version__}'
+USER_AGENT = f'InfraSonarVeeamBrProbe/{__version__}'
 TOKEN_CACHE: dict[tuple[str, str, str, str], tuple[float, str]] = {}
 LOCK = asyncio.Lock()
 
 
+# TODO use refresh token?
 async def get_new_token(api_url: str,
                         api_version: str,
                         grant_type: str,
@@ -169,7 +170,7 @@ async def query_multi(
         results.extend(data.get('data', []))
 
         total = data.get('pagination', {}).get('total', 0)
-        if not total or total >= len(results):
+        if not total or total >= len(results):  # TODO
             break
 
         params['skip'] = len(results)
