@@ -41,7 +41,6 @@ docker build -t veeambr-probe . --no-cache
 
 Available checks:
 - `backups`
-- `jobs`
 
 Create a yaml file, for example _(test.yaml)_:
 
@@ -54,6 +53,7 @@ asset:
     port: 4443
     apiVersion: 1.2.-rev1
     backupMaxAge: 7
+    malwareMaxAge: 7
 ```
 
 Run the probe with the `DRY_RUN` environment variable set the the yaml file above.
