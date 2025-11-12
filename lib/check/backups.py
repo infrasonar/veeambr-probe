@@ -46,7 +46,7 @@ async def check_backups(
             'type': result['type'],  # str
             'platformName': result['platformName'],  # str
             'platformId': result['platformId'],  # str
-            'restorePointsCount': result['restorePointsCount'],  # str
+            'restorePointsCount': result['restorePointsCount'],  # int
             'objectId': result['objectId'],  # str
             'viType': result['viType'],  # str
             'path': result['path'],  # str
@@ -81,8 +81,8 @@ async def check_backups(
         backups.append({
             'name': result['id'],  # str
             'jobId': result['jobId'],  # str
+            'jobName': result['name'],  # str
             'policyUniqueId': result['policyUniqueId'],  # str
-            'displayName': result['name'],  # str (name)
             'platformName': result['platformName'],  # str
             'platformId': result['platformId'],  # str
             'creationTime': str_to_timestamp(result['creationTime']),  # int
