@@ -215,8 +215,6 @@ async def query_multi(
 
         params['skip'] = len(results)
 
-        url = f'{api_url}{next}'
-
     return results
 
 
