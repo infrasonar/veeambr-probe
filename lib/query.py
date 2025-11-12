@@ -12,17 +12,16 @@ from .version import __version__
 TIME_OFFSET = 120  # seconds for token to expire before actual expiration
 IS_URL = re.compile(r'^https?\:\/\/', re.IGNORECASE)
 USER_AGENT = f'InfraSonarVeeamBrProbe/{__version__}'
-TOKEN_CACHE: dict[tuple[str, str, str, str], tuple[float, str]] = {}
+TOKEN_CACHE: dict[tuple[str, str, str, str], tuple[float, str, str]] = {}
 LOCK = asyncio.Lock()
 
 
-# TODO use refresh token?
 async def get_new_token(api_url: str,
                         api_version: str,
                         grant_type: str,
                         username: str,
                         password: str,
-                        verify_ssl: bool) -> tuple[int, str]:
+                        verify_ssl: bool) -> tuple[int, str, str]:
     data = {
         'grant_type': grant_type,
         'username': username,
@@ -42,7 +41,41 @@ async def get_new_token(api_url: str,
                 ssl=verify_ssl) as resp:
             resp.raise_for_status()
             data = await resp.json()
-            return data['expires_in'], data['access_token']
+            return (
+                data['expires_in'],
+                data['access_token'],
+                data['refresh_token'],
+            )
+
+
+async def get_refresh_token(api_url: str,
+                            api_version: str,
+                            grant_type: str,
+                            refresh_token: str,
+                            verify_ssl: bool) -> tuple[int, str, str]:
+    data = {
+        'grant_type': grant_type,
+        'refresh_token': refresh_token,
+    }
+    headers = {
+        'User-Agent': USER_AGENT,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-API-Version': api_version,
+    }
+    url = f'{api_url}/oauth2/token'
+    async with aiohttp.ClientSession(connector=get_connector()) as session:
+        async with session.post(
+                url,
+                data=data,
+                headers=headers,
+                ssl=verify_ssl) as resp:
+            resp.raise_for_status()
+            data = await resp.json()
+            return (
+                data['expires_in'],
+                data['access_token'],
+                data['refresh_token'],
+            )
 
 
 async def get_token(api_url: str,
@@ -55,20 +88,29 @@ async def get_token(api_url: str,
     async with LOCK:
         key = (api_url, api_version, username, password)
         now = time.time()
-        expire_ts, token = TOKEN_CACHE.get(key, (0.0, ''))
+        expire_ts, token, refresh_token = TOKEN_CACHE.get(key, (0.0, '', ''))
         is_new = False
         if force_new_token or now > expire_ts:
-            expires_in, token = \
-                await get_new_token(
-                    api_url=api_url,
-                    api_version=api_version,
-                    grant_type=grant_type,
-                    username=username,
-                    password=password,
-                    verify_ssl=verify_ssl)
+            if refresh_token:
+                expires_in, token, refresh_token = \
+                    await get_refresh_token(
+                        api_url=api_url,
+                        api_version=api_version,
+                        grant_type=grant_type,
+                        refresh_token=refresh_token,
+                        verify_ssl=verify_ssl)
+            else:
+                expires_in, token, refresh_token = \
+                    await get_new_token(
+                        api_url=api_url,
+                        api_version=api_version,
+                        grant_type=grant_type,
+                        username=username,
+                        password=password,
+                        verify_ssl=verify_ssl)
             logging.debug(f'Token expires in {expires_in} seconds')
             expire_ts = now + expires_in - TIME_OFFSET
-            TOKEN_CACHE[key] = (expire_ts, token)
+            TOKEN_CACHE[key] = (expire_ts, token, refresh_token)
             is_new = True
 
     return token, is_new
@@ -78,7 +120,6 @@ async def _query(
         asset: Asset,
         asset_config: dict,
         check_config: dict,
-        req: str,
         force_new_token: bool) -> tuple[str, str, str, bool, bool]:
     grant_type = asset_config.get('grantType', 'password')
     username = asset_config.get('username')
@@ -98,7 +139,7 @@ async def _query(
 
     address = check_config.get('address') or asset.name
     verify_ssl = check_config.get('verifySSL', False)
-    port = check_config.get('port', 4443)
+    port = check_config.get('port', 9419)
     api_version = check_config.get('apiVersion', '1.2.-rev1')
 
     assert api_version.startswith('1'), (
@@ -133,7 +174,6 @@ async def query_multi(
         asset,
         asset_config,
         check_config,
-        req,
         force_new_token)
 
     headers = {
@@ -191,7 +231,6 @@ async def query(
         asset,
         asset_config,
         check_config,
-        req,
         force_new_token)
 
     headers = {
