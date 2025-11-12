@@ -167,10 +167,10 @@ async def query_multi(
                 resp.raise_for_status()
                 data = await resp.json()
 
-        results.extend(data.get('data', []))
+        results.extend(data['data'])
 
-        total = data.get('pagination', {}).get('total', 0)
-        if not total or total >= len(results):  # TODO
+        total = data['pagination']['total']
+        if total >= len(results):
             break
 
         params['skip'] = len(results)
