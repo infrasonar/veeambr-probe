@@ -27,11 +27,8 @@ Only Grant Type `password` is currently supported.
 veeambr:
   config:
     grantType: password
-    clientId: 01234567-0123-0123-0123-0123456789ab
-    secret: xxxxxxxxxxx
     username: my_user_name
     password: xxxxxxxxxxxx
-    disableAntiforgeryToken: true
 ```
 
 ## Docker build
@@ -43,7 +40,7 @@ docker build -t veeambr-probe . --no-cache
 ## Dry run
 
 Available checks:
-- `health`
+- `backups`
 - `jobs`
 
 Create a yaml file, for example _(test.yaml)_:
@@ -51,11 +48,12 @@ Create a yaml file, for example _(test.yaml)_:
 ```yaml
 asset:
   name: "backup.foo.local"
-  check: "health"
+  check: "backups"
   config:
     verifySSL: false
     port: 4443
-    apiVersion: v8
+    apiVersion: 1.2.-rev1
+    backupMaxAge: 7
 ```
 
 Run the probe with the `DRY_RUN` environment variable set the the yaml file above.
