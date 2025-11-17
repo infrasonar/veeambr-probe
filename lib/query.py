@@ -118,12 +118,12 @@ async def get_token(api_url: str,
 
 async def _query(
         asset: Asset,
-        asset_config: dict,
-        check_config: dict,
+        local_config: dict,
+        config: dict,
         force_new_token: bool) -> tuple[str, str, str, bool, bool]:
-    grant_type = asset_config.get('grantType', 'password')
-    username = asset_config.get('username')
-    password = asset_config.get('password')
+    grant_type = local_config.get('grantType', 'password')
+    username = local_config.get('username')
+    password = local_config.get('password')
 
     assert grant_type == 'password', (
         'Only Grant Type `password` is supported, '
@@ -137,10 +137,10 @@ async def _query(
         'Password missing, '
         'please provide the Password as `password` in the appliance config')
 
-    address = check_config.get('address') or asset.name
-    verify_ssl = check_config.get('verifySSL', False)
-    port = check_config.get('port', 9419)
-    api_version = check_config.get('apiVersion', '1.2.-rev1')
+    address = config.get('address') or asset.name
+    verify_ssl = config.get('verifySSL', False)
+    port = config.get('port', 9419)
+    api_version = config.get('apiVersion', '1.2.-rev1')
 
     assert api_version.startswith('1'), (
         f'Only API Version 1.X.X is supported (got: {api_version})')
@@ -165,15 +165,15 @@ async def _query(
 
 async def query_multi(
         asset: Asset,
-        asset_config: dict,
-        check_config: dict,
+        local_config: dict,
+        config: dict,
         req: str,
         params: dict[str, Any] = {},
         force_new_token: bool = False) -> list[dict[str, Any]]:
     api_url, api_version, token, verify_ssl, is_new = await _query(
         asset,
-        asset_config,
-        check_config,
+        local_config,
+        config,
         force_new_token)
 
     headers = {
@@ -198,8 +198,8 @@ async def query_multi(
                     # Retry when using an old token and 401
                     return await query_multi(
                         asset=asset,
-                        asset_config=asset_config,
-                        check_config=check_config,
+                        local_config=local_config,
+                        config=config,
                         req=req,
                         params=params,
                         force_new_token=True)
@@ -220,15 +220,15 @@ async def query_multi(
 
 async def query(
         asset: Asset,
-        asset_config: dict,
-        check_config: dict,
+        local_config: dict,
+        config: dict,
         req: str,
         params: dict[str, Any] = {},
         force_new_token: bool = False) -> dict[str, Any]:
     api_url, api_version, token, verify_ssl, is_new = await _query(
         asset,
-        asset_config,
-        check_config,
+        local_config,
+        config,
         force_new_token)
 
     headers = {
@@ -250,8 +250,8 @@ async def query(
                 # Retry when using an old token and 401
                 return await query(
                     asset=asset,
-                    asset_config=asset_config,
-                    check_config=check_config,
+                    local_config=local_config,
+                    config=config,
                     req=req,
                     force_new_token=True)
 
