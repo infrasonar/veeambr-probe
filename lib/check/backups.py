@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from libprobe.asset import Asset
 from libprobe.check import Check
 from ..query import query_multi
@@ -7,6 +7,7 @@ from ..utils import str_to_timestamp
 
 class CheckBackups(Check):
     key = 'backups'
+    unchanged_eol = 0
 
     @staticmethod
     async def run(asset: Asset, local_config: dict, config: dict) -> dict:
@@ -71,7 +72,7 @@ class CheckBackups(Check):
             })
 
         max_age_days = config.get('backupMaxAge', 7)
-        after = datetime.utcnow() - timedelta(days=max_age_days)
+        after = datetime.now(UTC) - timedelta(days=max_age_days)
         req = '/backups'
         params = {
             'limit': 2000,
@@ -92,38 +93,9 @@ class CheckBackups(Check):
                 'repositoryId': result['repositoryId'],  # str
             })
 
-        max_age_days = config.get('malwareMaxAge', 7)
-        after = datetime.utcnow() - timedelta(days=max_age_days)
-        malware_events = '/malwareDetection/events'
-        params = {
-            'limit': 2000,
-            'detectedAfterTimeUtcFilter': after.isoformat()
-        }
-        results = await query_multi(asset, local_config, config, req, params)
-        malware_events = []
-        for result in results:
-            malware_events.append({
-                'name': result['id'],  # str (id)
-                'type': result['type'],  # str
-                'detectionTimeUtc':
-                    str_to_timestamp(result['detectionTimeUtc']),  # int
-                'machineUuid': result.get('machine', {}).get('uuid'),  # str
-                'machineName':
-                    result.get('machine', {}).get('displayName'),  # str
-                'machineBackupObjectId':
-                    result.get('machine', {}).get('backupObjectId'),  # str
-                'state': result['state'],  # str
-                'details': result['details'],  # str
-                'source': result['source'],  # str
-                'severity': result['severity'],  # str
-                'createdBy': result['createdBy'],  # str
-                'engine': result['engine'],  # str
-            })
-
         return {
             'backupObjects': backup_objects,
             'backupRepositories': backup_repositories,
             'backups': backups,
             'jobs': jobs,
-            'malwareEvents': malware_events,
         }
