@@ -24,7 +24,7 @@ class CheckBackups(Check):
                 'displayName': result['name'],  # str (name)
                 'type': result['type'],  # str
                 'isDisabled': result['isDisabled'],  # bool
-                'description': result['description'],  # str
+                'description': result.get('description'),  # str?
                 'isHighPriority': result['isHighPriority'],  # bool
                 'scheduleRunAutomatically':
                     result['schedule']['runAutomatically'],  # bool
@@ -45,7 +45,7 @@ class CheckBackups(Check):
             backup_objects.append({
                 'name': result['id'],  # str (id)
                 'displayName': result['name'],  # str (name)
-                'description': result['description'],  # str
+                'description': result.get('description'),  # str?
                 'type': result['type'],  # str
                 'platformName': result['platformName'],  # str
                 'platformId': result['platformId'],  # str
@@ -65,7 +65,7 @@ class CheckBackups(Check):
             backup_repositories.append({
                 'name': result['id'],  # str (id)
                 'displayName': result['name'],  # str (name)
-                'description': result['description'],  # str
+                'description': result.get('description'),  # str?
                 'uniqueId': result['uniqueId'],  # str
                 'type': result['type'],  # str
                 'hostId': result['hostId'],  # str
