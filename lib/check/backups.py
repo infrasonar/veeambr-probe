@@ -17,9 +17,9 @@ class CheckBackups(Check):
             'limit': 2000,
         }
         results = await query_multi(asset, local_config, config, req, params)
-        jobs = []
+        jobs = {}
         for result in results:
-            jobs.append({
+            jobs[result['id']] = {
                 'name': result['id'],  # str (id)
                 'displayName': result['name'],  # str (name)
                 'type': result['type'],  # str
@@ -33,6 +33,24 @@ class CheckBackups(Check):
                 'scheduleRetryEnabled': result['schedule'].get(
                     'retry', {}).get('isEnabled'),  # bool | None
                 'repositoryId': result['storage']['backupRepositoryId'],  # str
+            }
+
+        req = '/jobs/states'
+        params = {
+            'limit': 2000,
+        }
+        results = await query_multi(asset, local_config, config, req, params)
+        for result in results:
+            if result['id'] not in jobs:
+                continue
+            jobs[result['id']].update({
+                'status': result['status'],  # str
+                'lastRun': str_to_timestamp(result['lastRun']),  # int
+                'lastResult': result['lastResult'],  # str
+                'nextRun': str_to_timestamp(result.get('nextRun')),  # int
+                'workload': result['workload'],  # str
+                'objectsCount': result['objectsCount'],  # int
+                'sessionId': result.get('sessionId'),  # str
             })
 
         req = '/backupObjects'
@@ -97,5 +115,5 @@ class CheckBackups(Check):
             'backupObjects': backup_objects,
             'backupRepositories': backup_repositories,
             'backups': backups,
-            'jobs': jobs,
+            'jobs': list(jobs.values()),
         }
