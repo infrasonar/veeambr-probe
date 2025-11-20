@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, UTC
 from libprobe.asset import Asset
 from libprobe.check import Check
 from ..query import query_multi
-from ..utils import str_to_timestamp
+from ..utils import str_to_timestamp, iso_fmt
 
 
 class CheckBackups(Check):
@@ -76,7 +76,7 @@ class CheckBackups(Check):
         req = '/backups'
         params = {
             'limit': 2000,
-            'createdAfterFilter': after.isoformat()
+            'createdAfterFilter': iso_fmt(after)
         }
         results = await query_multi(asset, local_config, config, req, params)
         backups = []
