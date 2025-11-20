@@ -68,7 +68,7 @@ class CheckBackups(Check):
                 'description': result.get('description'),  # str?
                 'uniqueId': result['uniqueId'],  # str
                 'type': result['type'],  # str
-                'hostId': result['hostId'],  # str
+                'hostId': result.get('hostId'),  # str?
             })
 
         max_age_days = config.get('backupMaxAge', 7)
