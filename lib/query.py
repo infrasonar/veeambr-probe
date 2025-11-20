@@ -148,7 +148,7 @@ async def _query(
     if not IS_URL.match(address):
         address = f'https://{address}'
 
-    api_url = f'{address}:{port}'
+    api_url = f'{address}:{port}/api'
     logging.debug(f'Using API Url: {api_url}')
 
     token, is_new = await get_token(
