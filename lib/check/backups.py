@@ -40,7 +40,11 @@ class CheckBackups(Check):
             for incl in result.get('virtualMachines', {}).get('includes', []):
                 obj = incl.get('inventoryObject')
                 if obj is not None:
+                    # this is because the example shows an inventoryObject,
+                    # but the API description lacks this layer. We don't know
+                    # what is true
                     incl.update(obj)
+
                 object_id_or_name = incl.get('objectId', incl['name'])
                 jobs_includes.append({
                     'name': f'{job_id}_{object_id_or_name}',  # str (id)
