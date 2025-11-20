@@ -91,6 +91,7 @@ async def get_token(api_url: str,
         expire_ts, token, refresh_token = TOKEN_CACHE.get(key, (0.0, '', ''))
         is_new = False
         if force_new_token or now > expire_ts:
+            expires_in = 0  # satisfy pyright
             if refresh_token:
                 try:
                     expires_in, token, refresh_token = \
