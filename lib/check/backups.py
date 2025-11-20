@@ -37,22 +37,18 @@ class CheckBackups(Check):
             }
 
             job_id = result['id']
-            job_req = f'/jobs/{job_id}'
-            try:
-                job_result = await query(asset, local_config, config, job_req)
-            except Exception:
-                logging.warning(f'Failed to retrieve job {job_id} includes')
-                continue
-            for result in job_result['includes']:
+            for incl in result.get('virtualMachines', {}).get('includes', []):
+                object_id_or_name = incl.get('objectId', incl['name'])
                 jobs_includes.append({
-                    'name': f'{job_id}_{result["objectId"]}',  # str (id)
-                    'platform': result['platform'],  # str
-                    'size': result['size'],  # str
-                    'hostName': result['hostName'],  # str
-                    'objectName': result['name'],  # str
-                    'type': result['type'],  # str
-                    'objectId': result['objectId'],  # str
-                    'urn': result['urn'],  # str
+                    'name': f'{job_id}_{object_id_or_name}',  # str (id)
+                    'jobId': job_id,
+                    'platform': incl['platform'],  # str
+                    'size': incl['size'],  # str
+                    'hostName': incl['hostName'],  # str
+                    'objectName': incl['name'],  # str
+                    'type': incl['type'],  # str
+                    'objectId': incl.get('objectId'),  # str?
+                    'urn': incl.get('urn'),  # str?
                 })
 
         req = '/jobs/states'
@@ -67,10 +63,10 @@ class CheckBackups(Check):
                 'status': result['status'],  # str
                 'lastRun': str_to_timestamp(result['lastRun']),  # int
                 'lastResult': result['lastResult'],  # str
-                'nextRun': str_to_timestamp(result.get('nextRun')),  # int
+                'nextRun': str_to_timestamp(result.get('nextRun')),  # int?
                 'workload': result['workload'],  # str
                 'objectsCount': result['objectsCount'],  # int
-                'sessionId': result.get('sessionId'),  # str
+                'sessionId': result.get('sessionId'),  # str?
             })
 
         req = '/backupObjects'
@@ -112,6 +108,6 @@ class CheckBackups(Check):
         return {
             'backupObjects': backup_objects,
             'backupRepositories': backup_repositories,
-            'includes': jobs_includes,
+            'jobVMsIncludes': jobs_includes,
             'jobs': list(jobs.values()),
         }
