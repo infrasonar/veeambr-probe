@@ -38,15 +38,18 @@ class CheckBackups(Check):
 
             job_id = result['id']
             for incl in result.get('virtualMachines', {}).get('includes', []):
+                obj = incl.get('inventoryObject')
+                if obj is not None:
+                    incl.update(obj)
                 object_id_or_name = incl.get('objectId', incl['name'])
                 jobs_includes.append({
                     'name': f'{job_id}_{object_id_or_name}',  # str (id)
                     'jobId': job_id,
-                    'platform': incl['platform'],  # str
-                    'size': incl['size'],  # str
-                    'hostName': incl['hostName'],  # str
-                    'objectName': incl['name'],  # str
-                    'type': incl['type'],  # str
+                    'platform': incl.get('platform'),  # str
+                    'size': incl.get('size'),  # str
+                    'hostName': incl.get('hostName'),  # str
+                    'objectName': incl.get('name'),  # str
+                    'type': incl.get('type'),  # str
                     'objectId': incl.get('objectId'),  # str?
                     'urn': incl.get('urn'),  # str?
                 })
