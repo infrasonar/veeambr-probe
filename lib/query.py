@@ -92,14 +92,19 @@ async def get_token(api_url: str,
         is_new = False
         if force_new_token or now > expire_ts:
             if refresh_token:
-                expires_in, token, refresh_token = \
-                    await get_refresh_token(
-                        api_url=api_url,
-                        api_version=api_version,
-                        grant_type=grant_type,
-                        refresh_token=refresh_token,
-                        verify_ssl=verify_ssl)
-            else:
+                try:
+                    expires_in, token, refresh_token = \
+                        await get_refresh_token(
+                            api_url=api_url,
+                            api_version=api_version,
+                            grant_type='refresh_token',
+                            refresh_token=refresh_token,
+                            verify_ssl=verify_ssl)
+                except Exception as e:
+                    logging.error(f'failed to use refresh token: {e}')
+                    refresh_token = ''
+
+            if not refresh_token:
                 expires_in, token, refresh_token = \
                     await get_new_token(
                         api_url=api_url,
@@ -108,6 +113,7 @@ async def get_token(api_url: str,
                         username=username,
                         password=password,
                         verify_ssl=verify_ssl)
+
             logging.debug(f'Token expires in {expires_in} seconds')
             expire_ts = now + expires_in - TIME_OFFSET
             TOKEN_CACHE[key] = (expire_ts, token, refresh_token)
