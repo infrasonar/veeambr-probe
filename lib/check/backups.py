@@ -1,8 +1,8 @@
-from datetime import datetime, timedelta, UTC
+import logging
 from libprobe.asset import Asset
 from libprobe.check import Check
-from ..query import query_multi
-from ..utils import str_to_timestamp, iso_fmt
+from ..query import query_multi, query
+from ..utils import str_to_timestamp
 
 
 class CheckBackups(Check):
@@ -18,6 +18,7 @@ class CheckBackups(Check):
         }
         results = await query_multi(asset, local_config, config, req, params)
         jobs = {}
+        jobs_includes = []
         for result in results:
             jobs[result['id']] = {
                 'name': result['id'],  # str (id)
@@ -34,6 +35,25 @@ class CheckBackups(Check):
                     'retry', {}).get('isEnabled'),  # bool | None
                 'repositoryId': result['storage']['backupRepositoryId'],  # str
             }
+
+            job_id = result['id']
+            job_req = f'/jobs/{job_id}'
+            try:
+                job_result = await query(asset, local_config, config, job_req)
+            except Exception:
+                logging.warning(f'Failed to retrieve job {job_id} includes')
+                continue
+            for result in job_result['includes']:
+                jobs_includes.append({
+                    'name': f'{job_id}_{result["objectId"]}',  # str (id)
+                    'platform': result['platform'],  # str
+                    'size': result['size'],  # str
+                    'hostName': result['hostName'],  # str
+                    'objectName': result['name'],  # str
+                    'type': result['type'],  # str
+                    'objectId': result['objectId'],  # str
+                    'urn': result['urn'],  # str
+                })
 
         req = '/jobs/states'
         params = {
@@ -89,31 +109,9 @@ class CheckBackups(Check):
                 'hostId': result.get('hostId'),  # str?
             })
 
-        max_age_days = config.get('backupMaxAge', 7)
-        after = datetime.now(UTC) - timedelta(days=max_age_days)
-        req = '/backups'
-        params = {
-            'limit': 2000,
-            'createdAfterFilter': iso_fmt(after)
-        }
-        results = await query_multi(asset, local_config, config, req, params)
-        backups = []
-        for result in results:
-            backups.append({
-                'name': result['id'],  # str
-                'jobId': result['jobId'],  # str
-                'jobName': result['name'],  # str
-                'policyUniqueId': result['policyUniqueId'],  # str
-                'platformName': result['platformName'],  # str
-                'platformId': result['platformId'],  # str
-                'creationTime':
-                    str_to_timestamp(result['creationTime']),  # int
-                'repositoryId': result['repositoryId'],  # str
-            })
-
         return {
             'backupObjects': backup_objects,
             'backupRepositories': backup_repositories,
-            'backups': backups,
+            'includes': jobs_includes,
             'jobs': list(jobs.values()),
         }

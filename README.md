@@ -41,6 +41,7 @@ docker build -t veeambr-probe . --no-cache
 
 Available checks:
 - `backups`
+- `malwareEvents`
 
 Create a yaml file, for example _(test.yaml)_:
 
