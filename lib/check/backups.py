@@ -13,10 +13,7 @@ class CheckBackups(Check):
     async def run(asset: Asset, local_config: dict, config: dict) -> dict:
 
         req = '/jobs'
-        params = {
-            'limit': 2000,
-        }
-        results = await query_multi(asset, local_config, config, req, params)
+        results = await query_multi(asset, local_config, config, req, {})
         jobs = {}
         jobs_includes = []
         for result in results:
@@ -59,10 +56,7 @@ class CheckBackups(Check):
                 })
 
         req = '/jobs/states'
-        params = {
-            'limit': 2000,
-        }
-        results = await query_multi(asset, local_config, config, req, params)
+        results = await query_multi(asset, local_config, config, req, {})
         for result in results:
             if result['id'] not in jobs:
                 logging.debug(f'missing job for state: {result["id"]}')

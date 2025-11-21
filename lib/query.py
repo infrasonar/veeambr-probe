@@ -199,7 +199,7 @@ async def query_multi(
             async with session.get(
                     url,
                     headers=headers,
-                    params=params,
+                    params=params or None,
                     ssl=verify_ssl) as resp:
                 if is_new is False and resp.status == 401:
                     # Retry when using an old token and 401
