@@ -65,7 +65,26 @@ class CheckBackups(Check):
         results = await query_multi(asset, local_config, config, req, params)
         for result in results:
             if result['id'] not in jobs:
-                continue
+                logging.debug(f'missing job for state: {result["id"]}')
+                jobs[result['id']] = {
+                    'name': result['id'],  # str (id)
+                    'displayName': result.get('name'),  # str (name)
+                    'type': result.get('type'),  # str
+                    'isDisabled': result.get('isDisabled'),  # bool
+                    'description': result.get('description'),  # str?
+                    'isHighPriority': result.get('isHighPriority'),  # bool
+                    'scheduleRunAutomatically':  # bool
+                    result.get('schedule', {}).get('runAutomatically'),
+                    'scheduleBackupWindowEnabled':
+                    result.get('schedule', {}).get(
+                        'backupWindow', {}).get('isEnabled'),  # bool | None
+                    'scheduleRetryEnabled':
+                    result.get('schedule', {}).get(
+                        'retry', {}).get('isEnabled'),  # bool | None
+                    'repositoryId':
+                    result.get('storage', {}).get('backupRepositoryId'),  # str
+                }
+
             jobs[result['id']].update({
                 'status': result['status'],  # str
                 'lastRun': str_to_timestamp(result['lastRun']),  # int
