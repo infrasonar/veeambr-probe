@@ -91,9 +91,9 @@ class CheckBackups(Check):
                 'platformName': result['platformName'],  # str
                 'platformId': result['platformId'],  # str
                 'restorePointsCount': result['restorePointsCount'],  # int
-                'objectId': result['objectId'],  # str
-                'viType': result['viType'],  # str
-                'path': result['path'],  # str
+                'objectId': result.get('objectId'),  # str?
+                'viType': result.get('viType'),  # str
+                'path': result.get('path'),  # str
             })
 
         req = '/backupInfrastructure/repositories'
